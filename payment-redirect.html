@@ -13,10 +13,29 @@
 <body>
   <h2>Redirecting to FarmersBracket App...</h2>
   <div class="spinner"></div>
-  <p>If you are not redirected automatically, <a id="deeplink" href="farmersbracket://payment-success">tap here</a>.</p>
+  <p id="manual-link">If you are not redirected automatically, <a id="deeplink" href="#">tap here</a>.</p>
   <script>
+    // Parse query params for status and order_id
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    const status = getQueryParam('status') || 'success';
+    const orderId = getQueryParam('order_id');
+    let deepLink = '';
+    if (status === 'success') {
+      deepLink = 'farmersbracket://payment-success';
+    } else if (status === 'cancelled' || status === 'declined') {
+      deepLink = 'farmersbracket://payment-cancelled';
+    } else {
+      deepLink = 'farmersbracket://payment-success';
+    }
+    if (orderId) {
+      deepLink += '?order_id=' + encodeURIComponent(orderId);
+    }
+    document.getElementById('deeplink').href = deepLink;
     setTimeout(function() {
-      window.location = 'farmersbracket://payment-success';
+      window.location = deepLink;
     }, 1200);
   </script>
 </body>
