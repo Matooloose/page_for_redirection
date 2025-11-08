@@ -15,14 +15,19 @@
   <div class="spinner"></div>
   <p id="manual-link">If you are not redirected automatically, <a id="deeplink" href="#">tap here</a>.</p>
   <script>
-    // Parse query params for status and order_id
+    // Parse query params for status, order_id, and plan_id
     function getQueryParam(name) {
       const url = new URL(window.location.href);
       return url.searchParams.get(name);
     }
+    
     const status = getQueryParam('status') || 'success';
     const orderId = getQueryParam('order_id');
+    const planId = getQueryParam('plan_id');
+    
     let deepLink = '';
+    
+    // Determine if payment was successful or cancelled
     if (status === 'success') {
       deepLink = 'farmersbracket://payment-success';
     } else if (status === 'cancelled' || status === 'declined') {
@@ -30,10 +35,24 @@
     } else {
       deepLink = 'farmersbracket://payment-success';
     }
+    
+    // Add query parameters for order_id or plan_id
+    const params = [];
     if (orderId) {
-      deepLink += '?order_id=' + encodeURIComponent(orderId);
+      params.push('order_id=' + encodeURIComponent(orderId));
     }
+    if (planId) {
+      params.push('plan_id=' + encodeURIComponent(planId));
+    }
+    
+    if (params.length > 0) {
+      deepLink += '?' + params.join('&');
+    }
+    
+    console.log('Redirecting to:', deepLink);
     document.getElementById('deeplink').href = deepLink;
+    
+    // Redirect after 1.2 seconds
     setTimeout(function() {
       window.location = deepLink;
     }, 1200);
