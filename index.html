@@ -13,10 +13,66 @@
 <body>
   <h2>Redirecting to FarmersBracket App...</h2>
   <div class="spinner"></div>
-  <p>If you are not redirected automatically, <a id="deeplink" href="farmersbracket://payment-success">tap here</a>.</p>
+  <p id="manual-link">If you are not redirected automatically, <a id="deeplink" href="#">tap here</a>.</p>
   <script>
+    function getQueryParam(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+    
+    const status = getQueryParam('status') || 'success';
+    const orderId = getQueryParam('order_id');
+    const planId = getQueryParam('plan_id');
+    const pfPaymentId = getQueryParam('pf_payment_id');
+    
+    let deepLink = '';
+    
+    // Determine payment type: subscription or order
+    if (planId) {
+      // This is a SUBSCRIPTION payment
+      console.log('Detected subscription payment');
+      if (status === 'success' || status === 'COMPLETE' || !status) {
+        deepLink = 'farmersbracket://subscription-success';
+      } else if (status === 'cancelled' || status === 'declined') {
+        deepLink = 'farmersbracket://subscription-cancelled';
+      } else {
+        deepLink = 'farmersbracket://subscription-success';
+      }
+      
+      // Add plan_id parameter
+      const params = [`plan_id=${encodeURIComponent(planId)}`];
+      if (pfPaymentId) params.push(`pf_payment_id=${encodeURIComponent(pfPaymentId)}`);
+      deepLink += '?' + params.join('&');
+      
+    } else if (orderId) {
+      // This is an ORDER payment
+      console.log('Detected order payment');
+      if (status === 'success' || status === 'COMPLETE' || !status) {
+        deepLink = 'farmersbracket://payment-success';
+      } else if (status === 'cancelled' || status === 'declined') {
+        deepLink = 'farmersbracket://payment-cancelled';
+      } else {
+        deepLink = 'farmersbracket://payment-success';
+      }
+      
+      // Add order_id parameter
+      const params = [`order_id=${encodeURIComponent(orderId)}`];
+      if (pfPaymentId) params.push(`pf_payment_id=${encodeURIComponent(pfPaymentId)}`);
+      deepLink += '?' + params.join('&');
+      
+    } else {
+      // Unknown payment type, default to payment success
+      console.warn('No order_id or plan_id found');
+      deepLink = 'farmersbracket://payment-success';
+      if (pfPaymentId) deepLink += `?pf_payment_id=${encodeURIComponent(pfPaymentId)}`;
+    }
+    
+    console.log('Redirecting to:', deepLink);
+    document.getElementById('deeplink').href = deepLink;
+    
+    // Redirect after 1.2 seconds
     setTimeout(function() {
-      window.location = 'farmersbracket://payment-success';
+      window.location = deepLink;
     }, 1200);
   </script>
 </body>
