@@ -20,20 +20,24 @@
       return url.searchParams.get(name);
     }
     
-    const status = getQueryParam('status') || 'success';
+    const status = (getQueryParam('status') || getQueryParam('payment_status') || 'success').toLowerCase();
     const orderId = getQueryParam('order_id');
     const planId = getQueryParam('plan_id');
     const pfPaymentId = getQueryParam('pf_payment_id');
     
+    console.log('Payment redirect params:', { status, orderId, planId, pfPaymentId });
+    
     let deepLink = '';
+    
+    // Check if payment was successful
+    const isSuccess = status === 'success' || status === 'complete' || status === 'completed';
+    const isCancelled = status === 'cancelled' || status === 'declined' || status === 'failed';
     
     // Determine payment type: subscription or order
     if (planId) {
       // This is a SUBSCRIPTION payment
       console.log('Detected subscription payment');
-      if (status === 'success' || status === 'COMPLETE' || !status) {
-        deepLink = 'farmersbracket://subscription-success';
-      } else if (status === 'cancelled' || status === 'declined') {
+      if (isCancelled) {
         deepLink = 'farmersbracket://subscription-cancelled';
       } else {
         deepLink = 'farmersbracket://subscription-success';
@@ -47,9 +51,7 @@
     } else if (orderId) {
       // This is an ORDER payment
       console.log('Detected order payment');
-      if (status === 'success' || status === 'COMPLETE' || !status) {
-        deepLink = 'farmersbracket://payment-success';
-      } else if (status === 'cancelled' || status === 'declined') {
+      if (isCancelled) {
         deepLink = 'farmersbracket://payment-cancelled';
       } else {
         deepLink = 'farmersbracket://payment-success';
@@ -62,7 +64,7 @@
       
     } else {
       // Unknown payment type, default to payment success
-      console.warn('No order_id or plan_id found');
+      console.warn('No order_id or plan_id found - using fallback');
       deepLink = 'farmersbracket://payment-success';
       if (pfPaymentId) deepLink += `?pf_payment_id=${encodeURIComponent(pfPaymentId)}`;
     }
